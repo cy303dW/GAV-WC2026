@@ -269,7 +269,7 @@ const PLAYER_COLORS = ['#f5c842','#3b82f6','#22c55e','#ef4444','#a855f7'];
 // ─── SAMPLE MATCHES (will be enriched by API) ──────────────────────────────
 // Fallback shown while API fixtures are loading
 const FALLBACK_MATCHES = [
-  {id:9001,round:'group',group:'?',home:'Loading...',hf:'\u23F3',away:'Loading...',af:'\u23F3',date:'2026-06-11',time:'TBD',status:'upcoming',result:null,apiId:null},
+  {id:9001,round:'group',group:'?',home:'Loading...',hf:'⏳',away:'Loading...',af:'⏳',date:'2026-06-11',time:'TBD',status:'upcoming',result:null,apiId:null},
 ];
 
 // Country flag emoji map (ISO 3166-1 alpha-2 → flag emoji)
@@ -301,18 +301,18 @@ const ISO_MAP = {
   'Togo':'TG','Namibia':'NA','England':'GB','Wales':'GB','Scotland':'GB',
 };
 function isoToFlag(iso){
-  if(!iso||iso.length!==2) return '\u{1F3F3}\uFE0F';
+  if(!iso||iso.length!==2) return '🏳️';
   const offset=0x1F1E6-65;
   return String.fromCodePoint(iso.charCodeAt(0)+offset)+String.fromCodePoint(iso.charCodeAt(1)+offset);
 }
 function flagFor(name){
   // Handle special cases
-  if(!name||name==='TBD') return '\u{1F3F3}\uFE0F';
+  if(!name||name==='TBD') return '🏳️';
   const iso=ISO_MAP[name];
   if(iso) return isoToFlag(iso);
   // Try to match partial name
   const key=Object.keys(ISO_MAP).find(k=>name.toLowerCase().includes(k.toLowerCase())||k.toLowerCase().includes(name.toLowerCase()));
-  return key?isoToFlag(ISO_MAP[key]):'\u{1F3F3}\uFE0F';
+  return key?isoToFlag(ISO_MAP[key]):'🏳️';
 }
 
 // Map API fixture status to our status
@@ -910,8 +910,7 @@ function renderMatches(el){
           ${S.adminUnlocked?`<button class="btn btn-admin" onclick="openResult(${m.id})" style="font-size:12px;padding:5px 10px;margin-top:4px">Result</button>`:''}
         </div>
       </div>`;
-    }).join('')}
-    `}`;
+    }).join('')}`;
 }
 
 function setMatchFilter(r){S.matchFilter=r;showTab('matches');}
