@@ -244,7 +244,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-
 <script>
 // ─── CONFIG ────────────────────────────────────────────────────────────────
 const SHEET_ID = '1pb5HNobS8VY6LrFaZ4Zn4jQFGDkKJ9tHbqVc2_U646w';
-const APISPORTS_KEY = '01224092a21063e554ef83448afa572f';
+const APISPORTS_KEY = ''; // Key moved to Apps Script proxy for security
 const WC2026_LEAGUE = 1; // FIFA World Cup league ID in API-Football
 const WC2026_SEASON = 2026;
 
@@ -461,6 +461,7 @@ async function syncFromSheets(){
   }catch(e){
     console.warn('Sync failed:',e);
     setSyncStatus('err');
+    // Don't show error toast on first load — just use fallback data silently
   }
 }
 
@@ -546,10 +547,7 @@ async function fetchAllFixtures(force=false){
   if(apiCallsToday()>=95){ console.warn('Near daily API limit, skipping fixture fetch'); return false; }
   try{
     setSyncStatus('syncing');
-    const r=await fetch(
-      `https://v3.football.api-sports.io/fixtures?league=${WC2026_LEAGUE}&season=${WC2026_SEASON}`,
-      {headers:{'x-apisports-key':APISPORTS_KEY}}
-    );
+    const r=await fetch(`${APPS_SCRIPT_URL}?action=fixtures`);
     const d=await r.json();
     incrementApiCalls();
     stampNow(LS_FIXTURES_TS);
@@ -606,10 +604,7 @@ async function fetchHourlyResults(force=false){
   try{
     // Fetch today's fixtures to pick up any results
     const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Singapore'});
-    const r=await fetch(
-      `https://v3.football.api-sports.io/fixtures?league=${WC2026_LEAGUE}&season=${WC2026_SEASON}&date=${today}`,
-      {headers:{'x-apisports-key':APISPORTS_KEY}}
-    );
+    const r=await fetch(`${APPS_SCRIPT_URL}?action=results&date=${today}`);
     const d=await r.json();
     incrementApiCalls();
     stampNow(LS_RESULTS_TS);
