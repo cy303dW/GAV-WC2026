@@ -267,21 +267,75 @@ const PAYOUTS = [675,420,210,135,60];
 const PLAYER_COLORS = ['#f5c842','#3b82f6','#22c55e','#ef4444','#a855f7'];
 
 // ─── SAMPLE MATCHES (will be enriched by API) ──────────────────────────────
-const SAMPLE_MATCHES = [
-  {id:1,round:'group',group:'A',home:'Mexico',hf:'🇲🇽',away:'South Africa',af:'🇿🇦',date:'2026-06-11',time:'03:00',status:'done',result:{h:2,a:0},apiId:null},
-  {id:2,round:'group',group:'A',home:'South Korea',hf:'🇰🇷',away:'Czechia',af:'🇨🇿',date:'2026-06-11',time:'10:00',status:'done',result:{h:1,a:1},apiId:null},
-  {id:3,round:'group',group:'B',home:'Canada',hf:'🇨🇦',away:'Bosnia',af:'🇧🇦',date:'2026-06-12',time:'03:00',status:'live',result:{h:1,a:0},apiId:null},
-  {id:4,round:'group',group:'D',home:'USA',hf:'🇺🇸',away:'Paraguay',af:'🇵🇾',date:'2026-06-12',time:'09:00',status:'upcoming',result:null,apiId:null},
-  {id:5,round:'group',group:'C',home:'Argentina',hf:'🇦🇷',away:'Nigeria',af:'🇳🇬',date:'2026-06-13',time:'05:00',status:'upcoming',result:null,apiId:null},
-  {id:6,round:'group',group:'E',home:'France',hf:'🇫🇷',away:'Saudi Arabia',af:'🇸🇦',date:'2026-06-13',time:'08:00',status:'upcoming',result:null,apiId:null},
-  {id:7,round:'group',group:'F',home:'Brazil',hf:'🇧🇷',away:'Japan',af:'🇯🇵',date:'2026-06-14',time:'05:00',status:'upcoming',result:null,apiId:null},
-  {id:8,round:'group',group:'I',home:'Germany',hf:'🇩🇪',away:'Morocco',af:'🇲🇦',date:'2026-06-14',time:'08:00',status:'upcoming',result:null,apiId:null},
-  {id:9,round:'r32',group:null,home:'TBD',hf:'🏳️',away:'TBD',af:'🏳️',date:'2026-06-29',time:'TBD',status:'upcoming',result:null,apiId:null},
-  {id:10,round:'r16',group:null,home:'TBD',hf:'🏳️',away:'TBD',af:'🏳️',date:'2026-07-04',time:'TBD',status:'upcoming',result:null,apiId:null},
-  {id:11,round:'qf',group:null,home:'TBD',hf:'🏳️',away:'TBD',af:'🏳️',date:'2026-07-09',time:'TBD',status:'upcoming',result:null,apiId:null},
-  {id:12,round:'sf',group:null,home:'France',hf:'🇫🇷',away:'Brazil',af:'🇧🇷',date:'2026-07-14',time:'08:00',status:'upcoming',result:null,apiId:null},
-  {id:13,round:'final',group:null,home:'TBD',hf:'🏳️',away:'TBD',af:'🏳️',date:'2026-07-19',time:'TBD',status:'upcoming',result:null,apiId:null},
+// Fallback shown while API fixtures are loading
+const FALLBACK_MATCHES = [
+  {id:9001,round:'group',group:'?',home:'Loading...',hf:'⏳',away:'Loading...',af:'⏳',date:'2026-06-11',time:'TBD',status:'upcoming',result:null,apiId:null},
 ];
+
+// Country flag emoji map (ISO 3166-1 alpha-2 → flag emoji)
+const FLAG_MAP = {
+  'Argentina':'🇦🇷','Australia':'🇦🇺','Belgium':'🇧🇪','Bolivia':'🇧🇴','Brazil':'🇧🇷',
+  'Cameroon':'🇨🇲','Canada':'🇨🇦','Chile':'🇨🇱','China PR':'🇨🇳','Colombia':'🇨🇴',
+  'Costa Rica':'🇨🇷','Croatia':'🇭🇷','Czechia':'🇨🇿','Czech Republic':'🇨🇿',
+  'Denmark':'🇩🇰','Ecuador':'🇪🇨','Egypt':'🇪🇬','England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','France':'🇫🇷',
+  'Germany':'🇩🇪','Ghana':'🇬🇭','Greece':'🇬🇷','Honduras':'🇭🇳','Hungary':'🇭🇺',
+  'Indonesia':'🇮🇩','Iran':'🇮🇷','Iraq':'🇮🇶','Israel':'🇮🇱','Italy':'🇮🇹',
+  'Jamaica':'🇯🇲','Japan':'🇯🇵','Kenya':'🇰🇪','Mexico':'🇲🇽','Morocco':'🇲🇦',
+  'Netherlands':'🇳🇱','New Zealand':'🇳🇿','Nigeria':'🇳🇬','Norway':'🇳🇴',
+  'Panama':'🇵🇦','Paraguay':'🇵🇾','Peru':'🇵🇪','Poland':'🇵🇱','Portugal':'🇵🇹',
+  'Qatar':'🇶🇦','Romania':'🇷🇴','Saudi Arabia':'🇸🇦','Senegal':'🇸🇳',
+  'Serbia':'🇷🇸','Slovakia':'🇸🇰','Slovenia':'🇸🇮','South Africa':'🇿🇦',
+  'South Korea':'🇰🇷','Korea Republic':'🇰🇷','Spain':'🇪🇸','Sweden':'🇸🇪',
+  'Switzerland':'🇨🇭','Trinidad and Tobago':'🇹🇹','Tunisia':'🇹🇳','Turkey':'🇹🇷',
+  'Ukraine':'🇺🇦','Uruguay':'🇺🇾','USA':'🇺🇸','United States':'🇺🇸',
+  'Venezuela':'🇻🇪','Wales':'🏴󠁧󠁢󠁷󠁬󠁳󠁿','Uzbekistan':'🇺🇿','Bosnia':'🇧🇦',
+  'Bosnia and Herzegovina':'🇧🇦','Democratic Republic of Congo':'🇨🇩','DR Congo':'🇨🇩',
+  'Cuba':'🇨🇺','El Salvador':'🇸🇻','Guatemala':'🇬🇹','Haiti':'🇭🇹',
+  'New Caledonia':'🇳🇨','Bahrain':'🇧🇭','Kuwait':'🇰🇼','Oman':'🇴🇲',
+  'Palestine':'🇵🇸','Syria':'🇸🇾','Thailand':'🇹🇭','Vietnam':'🇻🇳',
+  'Côte d'Ivoire':'🇨🇮','Ivory Coast':'🇨🇮','Algeria':'🇩🇿','Angola':'🇦🇴',
+  'Cape Verde':'🇨🇻','Comoros':'🇰🇲','Guinea':'🇬🇳','Mali':'🇲🇱',
+  'Tanzania':'🇹🇿','Uganda':'🇺🇬','Zambia':'🇿🇲','Zimbabwe':'🇿🇼',
+  'Togo':'🇹🇬','Namibia':'🇳🇦',
+};
+function flagFor(name){ return FLAG_MAP[name]||'🏳️'; }
+
+// Round detection from API fixture round string
+function detectRound(roundStr){
+  if(!roundStr) return 'group';
+  const r=roundStr.toLowerCase();
+  if(r.includes('final') && !r.includes('semi') && !r.includes('quarter') && !r.includes('round of')) return 'final';
+  if(r.includes('semi')) return 'sf';
+  if(r.includes('quarter')) return 'qf';
+  if(r.includes('round of 16')) return 'r16';
+  if(r.includes('round of 32')) return 'r32';
+  return 'group';
+}
+
+// Map API fixture status to our status
+function mapStatus(shortStatus){
+  const done=['FT','AET','PEN','AWD','WO'];
+  const live=['1H','2H','ET','BT','P','INT','LIVE'];
+  if(done.includes(shortStatus)) return 'done';
+  if(live.includes(shortStatus)) return 'live';
+  return 'upcoming';
+}
+
+// Convert UTC date+time from API to SGT time string (HH:MM)
+function utcToSGT(utcDateStr){
+  try{
+    const d=new Date(utcDateStr);
+    return d.toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Asia/Singapore'});
+  }catch(e){ return 'TBD'; }
+}
+
+// Convert UTC date string to YYYY-MM-DD in SGT
+function utcDateToSGT(utcDateStr){
+  try{
+    const d=new Date(utcDateStr);
+    return d.toLocaleDateString('en-CA',{timeZone:'Asia/Singapore'});
+  }catch(e){ return utcDateStr?utcDateStr.split('T')[0]:''; }
+}
 
 // ─── APP STATE ─────────────────────────────────────────────────────────────
 let S = {
@@ -294,7 +348,7 @@ let S = {
   theme: 'dark',
   // shared (from Sheets)
   players: [],         // [{slot,nickname,color,isAdmin}]
-  matches: [...SAMPLE_MATCHES],
+  matches: [...FALLBACK_MATCHES],
   predictions: {},     // {slot: {matchId: {result} or {h,a}}}
   results: {},         // {matchId: {h,a}}
   tab: 'home',
@@ -430,38 +484,201 @@ function setSyncStatus(s){
 }
 
 // ─── API-FOOTBALL ──────────────────────────────────────────────────────────
-async function fetchLiveResults(){
-  try{
-    const r=await fetch(`https://v3.football.api-sports.io/fixtures?league=${WC2026_LEAGUE}&season=${WC2026_SEASON}&live=all`,{
-      headers:{'x-apisports-key':APISPORTS_KEY}
-    });
-    const d=await r.json();
-    if(d.response&&d.response.length>0){
-      d.response.forEach(fix=>{
-        const m=S.matches.find(x=>x.apiId===fix.fixture.id||(x.home===fix.teams.home.name&&x.away===fix.teams.away.name));
-        if(m){
-          m.result={h:fix.goals.home||0,a:fix.goals.away||0};
-          m.status=fix.fixture.status.short==='FT'?'done':'live';
-          m.apiId=fix.fixture.id;
-        }
-      });
-    }
-  }catch(e){ console.warn('API fetch failed',e); }
+
+// Rate limit keys in localStorage
+const LS_FIXTURES_TS   = 'wc2026_fixtures_ts';   // last full fixture fetch
+const LS_RESULTS_TS    = 'wc2026_results_ts';     // last hourly result check
+const FIXTURE_TTL      = 6 * 60 * 60 * 1000;     // re-fetch fixtures every 6h
+const RESULTS_TTL      = 60 * 60 * 1000;          // re-fetch results every 1h
+
+function apiCallsToday(){
+  const key='wc2026_api_calls_'+new Date().toISOString().split('T')[0];
+  return parseInt(localStorage.getItem(key)||'0');
+}
+function incrementApiCalls(){
+  const key='wc2026_api_calls_'+new Date().toISOString().split('T')[0];
+  const n=(parseInt(localStorage.getItem(key)||'0'))+1;
+  localStorage.setItem(key,n);
+  console.log(`API calls today: ${n}/100`);
+  return n;
+}
+function isRateLimited(tsKey, ttl){
+  const last=parseInt(localStorage.getItem(tsKey)||'0');
+  return Date.now()-last < ttl;
+}
+function stampNow(tsKey){ localStorage.setItem(tsKey, Date.now()); }
+
+// Convert API fixture to our match format
+function apiFixToMatch(fix, idx){
+  const round=detectRound(fix.league.round||'');
+  const isGroup=round==='group';
+  const groupMatch=isGroup?(fix.league.round||'').match(/Group ([A-Z]+)/i):null;
+  const group=groupMatch?groupMatch[1].toUpperCase():null;
+  const home=fix.teams.home.name;
+  const away=fix.teams.away.name;
+  const status=mapStatus(fix.fixture.status.short);
+  const hasResult=status==='done'||status==='live';
+  return {
+    id: fix.fixture.id,
+    round,
+    group,
+    home,
+    hf: flagFor(home),
+    away,
+    af: flagFor(away),
+    date: utcDateToSGT(fix.fixture.date),
+    time: fix.fixture.date&&fix.fixture.date!=='TBD'?utcToSGT(fix.fixture.date):'TBD',
+    status,
+    result: hasResult&&fix.goals.home!==null?{h:fix.goals.home,a:fix.goals.away}:null,
+    apiId: fix.fixture.id,
+  };
 }
 
-async function fetchUpcomingFixtures(){
+// Fetch ALL WC2026 fixtures from API — used on first load and every 6h
+async function fetchAllFixtures(force=false){
+  if(!force && isRateLimited(LS_FIXTURES_TS, FIXTURE_TTL)){
+    console.log('Fixture fetch skipped — cache still fresh');
+    return false;
+  }
+  if(apiCallsToday()>=95){ console.warn('Near daily API limit, skipping fixture fetch'); return false; }
   try{
-    const r=await fetch(`https://v3.football.api-sports.io/fixtures?league=${WC2026_LEAGUE}&season=${WC2026_SEASON}&next=10`,{
-      headers:{'x-apisports-key':APISPORTS_KEY}
-    });
+    setSyncStatus('syncing');
+    const r=await fetch(
+      `https://v3.football.api-sports.io/fixtures?league=${WC2026_LEAGUE}&season=${WC2026_SEASON}`,
+      {headers:{'x-apisports-key':APISPORTS_KEY}}
+    );
     const d=await r.json();
-    if(d.response&&d.response.length>0){
-      d.response.forEach(fix=>{
-        const existing=S.matches.find(x=>x.home===fix.teams.home.name&&x.away===fix.teams.away.name);
-        if(existing){existing.apiId=fix.fixture.id;}
+    incrementApiCalls();
+    stampNow(LS_FIXTURES_TS);
+    if(!d.response||d.response.length===0){
+      console.warn('API returned no fixtures');
+      return false;
+    }
+    // Map all fixtures to our format
+    const fetched=d.response.map((fix,i)=>apiFixToMatch(fix,i));
+    // Merge: preserve existing predictions/results, update team names & times
+    fetched.forEach(f=>{
+      const existing=S.matches.find(m=>m.apiId===f.id||
+        (m.home===f.home&&m.away===f.away&&m.round===f.round));
+      if(existing){
+        // Update mutable fields only
+        existing.home=f.home; existing.hf=f.hf;
+        existing.away=f.away; existing.af=f.af;
+        existing.date=f.date; existing.time=f.time;
+        existing.group=f.group; existing.apiId=f.id;
+        // Only update status/result if not already marked done by admin
+        if(existing.status!=='done'||f.status==='done'){
+          existing.status=f.status;
+          if(f.result) existing.result=f.result;
+        }
+      } else {
+        S.matches.push(f);
+      }
+    });
+    // Remove FALLBACK_MATCHES placeholders if real fixtures loaded
+    S.matches=S.matches.filter(m=>m.id!==9001);
+    // Sort by date then time
+    S.matches.sort((a,b)=>{
+      const da=a.date+' '+a.time, db=b.date+' '+b.time;
+      return da.localeCompare(db);
+    });
+    // Cache to sheet
+    await cacheFixturesToSheet();
+    console.log(`Loaded ${fetched.length} fixtures from API`);
+    return true;
+  }catch(e){
+    console.warn('Fixture fetch failed:',e);
+    setSyncStatus('err');
+    return false;
+  }
+}
+
+// Hourly result check — fetches only finished/recent matches
+async function fetchHourlyResults(force=false){
+  if(!force && isRateLimited(LS_RESULTS_TS, RESULTS_TTL)){
+    console.log('Result check skipped — checked within last hour');
+    return false;
+  }
+  if(apiCallsToday()>=95){ console.warn('Near daily API limit, skipping result check'); return false; }
+  try{
+    // Fetch today's fixtures to pick up any results
+    const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Singapore'});
+    const r=await fetch(
+      `https://v3.football.api-sports.io/fixtures?league=${WC2026_LEAGUE}&season=${WC2026_SEASON}&date=${today}`,
+      {headers:{'x-apisports-key':APISPORTS_KEY}}
+    );
+    const d=await r.json();
+    incrementApiCalls();
+    stampNow(LS_RESULTS_TS);
+    if(!d.response||d.response.length===0) return false;
+    let updated=0;
+    d.response.forEach(fix=>{
+      const m=S.matches.find(x=>x.apiId===fix.fixture.id);
+      if(!m) return;
+      const newStatus=mapStatus(fix.fixture.status.short);
+      const hasResult=fix.goals.home!==null;
+      if(newStatus!==m.status||(hasResult&&(!m.result||m.result.h!==fix.goals.home||m.result.a!==fix.goals.away))){
+        m.status=newStatus;
+        if(hasResult) m.result={h:fix.goals.home,a:fix.goals.away};
+        // Write result to sheet if just completed
+        if(newStatus==='done'&&hasResult){
+          writeToSheet('Results',{
+            match_id:m.id,home_score:fix.goals.home,away_score:fix.goals.away,
+            entered_at:new Date().toISOString(),source:'api'
+          });
+        }
+        updated++;
+      }
+    });
+    if(updated>0) console.log(`Updated ${updated} match result(s) from API`);
+    return updated>0;
+  }catch(e){
+    console.warn('Hourly result fetch failed:',e);
+    return false;
+  }
+}
+
+// Write fixtures to Matches sheet (cache)
+async function cacheFixturesToSheet(){
+  // Only cache if we have real fixtures
+  if(S.matches.length===0||S.matches[0].id===9001) return;
+  try{
+    for(const m of S.matches){
+      await writeToSheet('Matches',{
+        match_id:m.id,round:m.round,group:m.group||'',
+        home:m.home,home_flag:m.hf,away:m.away,away_flag:m.af,
+        date:m.date,time_sgt:m.time,status:m.status,api_fixture_id:m.apiId||''
       });
     }
-  }catch(e){ console.warn('Upcoming fetch failed',e); }
+  }catch(e){ console.warn('Fixture cache write failed:',e); }
+}
+
+// Load fixtures from Matches sheet (used if API is unavailable)
+async function loadFixturesFromSheet(){
+  try{
+    const rows=await fetchSheetCSV('Matches');
+    if(!rows||rows.length===0) return false;
+    const loaded=rows.filter(r=>r.match_id).map(r=>({
+      id:parseInt(r.match_id),
+      round:r.round||'group',
+      group:r.group||null,
+      home:r.home||'TBD',
+      hf:r.home_flag||'🏳️',
+      away:r.away||'TBD',
+      af:r.away_flag||'🏳️',
+      date:r.date||'',
+      time:r.time_sgt||'TBD',
+      status:r.status||'upcoming',
+      result:null,
+      apiId:r.api_fixture_id?parseInt(r.api_fixture_id):null,
+    }));
+    if(loaded.length>0){
+      S.matches=loaded;
+      console.log(`Loaded ${loaded.length} fixtures from sheet cache`);
+      return true;
+    }
+  }catch(e){ console.warn('Sheet fixture load failed:',e); }
+  return false;
 }
 
 // ─── COUNTDOWN ────────────────────────────────────────────────────────────
@@ -573,6 +790,7 @@ function showTab(tab){
 // ─── HOME ─────────────────────────────────────────────────────────────────
 function renderHome(el){
   const totals=getPlayerTotals();
+  const isLoading=S.matches.length===1&&S.matches[0].id===9001;
   const upcoming=S.matches.filter(m=>m.status==='upcoming').slice(0,3);
   const next=getNextMatch();
   el.innerHTML=`
@@ -599,7 +817,7 @@ function renderHome(el){
       <div>
         <div class="card" style="margin-bottom:1rem">
           <div class="card-title">📅 Upcoming Matches</div>
-          ${upcoming.length===0?'<div class="empty-state">No upcoming matches</div>':upcoming.map(m=>{
+          ${isLoading?'<div class="empty-state" style="color:var(--amber)">⏳ Loading fixtures...</div>':upcoming.length===0?'<div class="empty-state">No upcoming matches</div>':upcoming.map(m=>{
             const pred=myPred(m.id);
             return `<div class="match-mini">
               <div class="mm-teams">
@@ -632,21 +850,27 @@ function renderHome(el){
 
 // ─── MATCHES ──────────────────────────────────────────────────────────────
 function renderMatches(el){
+  const isLoadingMatches=S.matches.length===1&&S.matches[0].id===9001;
   const filtered=S.matchFilter==='all'?S.matches:S.matches.filter(m=>m.round===S.matchFilter);
   el.innerHTML=`
     <div class="section-header">
-      <div><div class="section-title">Matches</div><div class="section-sub">${S.matches.length} total · 2026 FIFA World Cup</div></div>
+      <div><div class="section-title">Matches</div><div class="section-sub">${isLoadingMatches?'Loading fixtures from API...':S.matches.length+' total · 2026 FIFA World Cup'}</div></div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="sync-dot ${S.syncStatus}" id="syncDotMatches" title="Sync status"></div>
         <button class="btn btn-ghost" onclick="doSync()" style="font-size:12px;padding:5px 12px">↻ Sync</button>
-        ${S.adminUnlocked?`<button class="btn btn-admin" onclick="fetchLiveResults().then(()=>showTab('matches'))" style="font-size:12px;padding:5px 12px">Fetch Results</button>`:''}
+        ${S.adminUnlocked?`<button class="btn btn-admin" onclick="adminRefresh()" style="font-size:12px;padding:5px 12px">↻ Refresh</button>`:''}
       </div>
     </div>
     <div class="round-filter">
       ${['all','group','r32','r16','qf','sf','final'].map(r=>`
         <button class="rfbtn ${S.matchFilter===r?'active':''}" onclick="setMatchFilter('${r}')">${r==='all'?'All':ROUND_NAMES[r]||'All'}</button>`).join('')}
     </div>
-    ${filtered.map(m=>{
+    ${isLoadingMatches?`
+      <div style="text-align:center;padding:3rem;color:var(--amber)">
+        <div style="font-size:32px;margin-bottom:0.75rem">⏳</div>
+        <div style="font-weight:600">Loading fixtures from API-Football...</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:4px">This may take a moment on first load</div>
+      </div>`:filtered.map(m=>{
       const pred=myPred(m.id);
       const isKO=m.round!=='group';
       let scoreHtml='';
@@ -683,7 +907,8 @@ function renderMatches(el){
           ${S.adminUnlocked?`<button class="btn btn-admin" onclick="openResult(${m.id})" style="font-size:12px;padding:5px 10px;margin-top:4px">Result</button>`:''}
         </div>
       </div>`;
-    }).join('')}`;
+    }).join('')}
+    `}`;
 }
 
 function setMatchFilter(r){S.matchFilter=r;showTab('matches');}
@@ -1133,7 +1358,7 @@ function renderFullApp(){
       <header class="header">
         <div class="logo">⚽ <span>WC2026</span> PREDICTOR</div>
         <div class="header-right">
-          <div class="sync-dot ${S.syncStatus}" id="syncDot" title="Sync status"></div>
+          <div class="sync-dot ${S.syncStatus}" id="syncDot" title="Sync status · API calls today: ${apiCallsToday()}/100"></div>
           ${S.mySlot?`
             <div class="player-chip" onclick="openPlayerMenu()">
               ${avatarHtml(S.myNickname,S.myColor,26)}
@@ -1212,12 +1437,26 @@ function renderFullApp(){
 }
 
 // ─── SYNC ─────────────────────────────────────────────────────────────────
-async function doSync(){
+async function doSync(force=false){
   setSyncStatus('syncing');
+  // Step 1: Load players/predictions/results from sheet
   await syncFromSheets();
-  // Try live results from API
-  await fetchLiveResults();
+  // Step 2: Load fixtures — try API first, fall back to sheet cache
+  const apiLoaded=await fetchAllFixtures(force);
+  if(!apiLoaded && S.matches.length<=1){
+    await loadFixturesFromSheet();
+  }
+  // Step 3: Hourly result check
+  await fetchHourlyResults(force);
+  setSyncStatus('ok');
   if(S.tab) showTab(S.tab);
+}
+
+// Admin manual refresh — forces all fetches regardless of TTL
+async function adminRefresh(){
+  showToast('Refreshing fixtures and results...');
+  await doSync(true);
+  showToast('Refresh complete ✓');
 }
 
 // ─── MISC ─────────────────────────────────────────────────────────────────
@@ -1242,8 +1481,12 @@ function showToast(msg,isErr=false){
 loadLocal();
 if(S.theme==='light') document.body.classList.add('light');
 
-// Auto-sync every 60 seconds
-setInterval(()=>{ if(S.mySlot) doSync(); },60000);
+// Auto-sync every 60 minutes (aligned with result TTL)
+setInterval(()=>{ if(S.mySlot) doSync(); },60*60*1000);
+// Also sync when tab becomes visible again (user returns to browser)
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&S.mySlot) doSync();
+});
 
 if(!S.mySlot){
   renderOnboarding();
