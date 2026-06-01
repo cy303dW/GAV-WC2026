@@ -476,6 +476,29 @@ function countdownTo(dateStr,timeStr){
 }
 function pad(n){return String(n).padStart(2,'0');}
 
+function deadlineFor(match){
+  // Returns the prediction deadline: kickoff minus 2 hours (in ms)
+  if(!match.date||match.time==='TBD') return null;
+  const kickoff=new Date(`${match.date}T${match.time}:00+08:00`);
+  return new Date(kickoff.getTime()-2*60*60*1000);
+}
+
+function isPredictionOpen(match){
+  // Returns true if current time is before the 2h deadline
+  const dl=deadlineFor(match);
+  if(!dl) return false;
+  return new Date()<dl;
+}
+
+function countdownToDeadline(match){
+  // Counts down to the prediction deadline (kickoff - 2h)
+  const dl=deadlineFor(match);
+  if(!dl) return null;
+  const diff=dl-new Date();
+  if(diff<=0) return null;
+  return{d:Math.floor(diff/86400000),h:Math.floor(diff%86400000/3600000),m:Math.floor(diff%3600000/60000),s:Math.floor(diff%60000/1000),diff};
+}
+
 function updateCountdown(){
   const el=document.getElementById('cdDisplay');
   if(!el) return;
@@ -493,11 +516,16 @@ function updateCountdown(){
 // ─── REMINDER BANNER ──────────────────────────────────────────────────────
 function getReminderInfo(){
   if(!S.mySlot) return null;
-  const pending=S.matches.filter(m=>m.status==='upcoming'&&!myPred(m.id));
+  // Only count matches where prediction window is still open
+  const pending=S.matches.filter(m=>m.status==='upcoming'&&!myPred(m.id)&&isPredictionOpen(m));
   if(pending.length===0) return null;
-  const next=getNextMatch();
-  if(!next) return null;
-  const cd=countdownTo(next.date,next.time);
+  // Find the soonest closing deadline
+  const next=pending.reduce((soonest,m)=>{
+    const dl=deadlineFor(m);
+    const sdl=deadlineFor(soonest);
+    return dl&&sdl&&dl<sdl?m:soonest;
+  });
+  const cd=countdownToDeadline(next);
   const hrs=cd?(cd.d*24+cd.h):9999;
   let urgency='normal';
   if(hrs<1) urgency='urgent';
@@ -509,14 +537,14 @@ function renderReminderBanner(){
   const info=getReminderInfo();
   if(!info) return '';
   const{pending,next,cd,urgency}=info;
-  const timeStr=cd?`${cd.d>0?cd.d+'d ':''}${pad(cd.h)}h ${pad(cd.m)}m`:'soon';
+  const timeStr=cd?`${cd.d>0?cd.d+'d ':''}${pad(cd.h)}h ${pad(cd.m)}m`:'very soon';
   const icons={normal:'📋',warning:'⚠️',urgent:'🚨'};
-  const matchday=next.group?`Matchday · Group ${next.group}`:`${ROUND_NAMES[next.round]}`;
+  const matchday=next.group?`Group ${next.group}`:`${ROUND_NAMES[next.round]}`;
   return `<div class="reminder-banner reminder-${urgency}">
     <div class="reminder-icon">${icons[urgency]}</div>
     <div class="reminder-text">
-      <div class="reminder-title">You have ${pending} prediction${pending!==1?'s':''} pending for ${matchday} — closes in ${timeStr}</div>
-      <div class="reminder-sub">${next.hf} ${next.home} vs ${next.away} ${next.af} · ${next.time} SGT</div>
+      <div class="reminder-title">You have ${pending} prediction${pending!==1?'s':''} pending — deadline closes in ${timeStr}</div>
+      <div class="reminder-sub">${next.hf} ${next.home} vs ${next.away} ${next.af} · ${matchday} · Deadline: 2h before kickoff (${next.time} SGT)</div>
     </div>
     <button class="btn btn-gold" onclick="showTab('predict')" style="flex-shrink:0;font-size:12px;padding:6px 12px;">Submit →</button>
   </div>`;
@@ -583,7 +611,7 @@ function renderHome(el){
                 <div class="mm-meta">${ROUND_NAMES[m.round]}</div>
                 <div class="mm-time">${m.time} SGT</div>
               </div>
-              ${S.mySlot?`<button class="btn ${pred?'btn-done':'btn-gold'}" onclick="openPredict(${m.id})" style="font-size:12px;padding:5px 10px">${pred?'✓':'Predict'}</button>`:''}
+              ${S.mySlot?`<button class="btn ${pred?'btn-done':isPredictionOpen(m)?'btn-gold':'btn-done'}" onclick="openPredict(${m.id})" style="font-size:12px;padding:5px 10px">${pred?'✓':isPredictionOpen(m)?'Predict':'Closed'}</button>`:''}
             </div>`;
           }).join('')}
           <button class="btn btn-ghost btn-wide" onclick="showTab('matches')">View all matches →</button>
@@ -651,7 +679,7 @@ function renderMatches(el){
           <div class="mf-group">${m.time} SGT</div>
         </div>
         <div>
-          ${S.mySlot&&m.status==='upcoming'?`<button class="btn ${pred?'btn-done':'btn-gold'}" onclick="openPredict(${m.id})" style="font-size:12px;padding:5px 10px">${pred?'✓':'+Predict'}</button>`:''}
+          ${S.mySlot&&m.status==='upcoming'?`<button class="btn ${pred?'btn-done':isPredictionOpen(m)?'btn-gold':'btn-done'}" onclick="openPredict(${m.id})" style="font-size:12px;padding:5px 10px" ${!isPredictionOpen(m)&&!pred?'disabled':''} title="${!isPredictionOpen(m)&&!pred?'Deadline passed':''}">${pred?'✓':isPredictionOpen(m)?'+Predict':'Closed'}</button>`:''}
           ${S.adminUnlocked?`<button class="btn btn-admin" onclick="openResult(${m.id})" style="font-size:12px;padding:5px 10px;margin-top:4px">Result</button>`:''}
         </div>
       </div>`;
@@ -688,7 +716,7 @@ function renderPredict(el){
             <div class="pred-round">${ROUND_NAMES[m.round]} · ${m.time} SGT</div>
           </div>
           ${pred?`<div class="pred-status" style="color:var(--green);font-weight:500">✓ ${predStr}</div>`:`<div class="pred-status" style="color:var(--text3);font-style:italic">Not submitted</div>`}
-          <button class="btn ${pred?'btn-ghost':'btn-gold'}" onclick="openPredict(${m.id})">${pred?'Edit':'Predict'}</button>
+          <button class="btn ${pred?'btn-ghost':isPredictionOpen(m)?'btn-gold':'btn-done'}" onclick="openPredict(${m.id})" ${!isPredictionOpen(m)&&!pred?'disabled':''}>${pred?'Edit':isPredictionOpen(m)?'Predict':'Closed'}</button>
         </div>`;
       }).join('')}`:''}
     ${done.length?`
@@ -816,6 +844,7 @@ let _resultMatchId=null, _tempResult={h:0,a:0};
 function openPredict(matchId){
   const m=S.matches.find(x=>x.id===matchId);
   if(!m||!S.mySlot) return;
+  if(!isPredictionOpen(m)){showToast('Prediction deadline has passed for this match',true);return;}
   _predMatchId=matchId;
   const isKO=m.round!=='group';
   const ex=myPred(matchId);
@@ -976,8 +1005,26 @@ function onPinInput(el,idx){
 
 // ─── ONBOARDING ───────────────────────────────────────────────────────────
 let _obStep=1, _obNickname='', _obColor=PLAYER_COLORS[0], _obIsAdmin=false, _obPin='';
+let _adminAlreadyExists=false;
 
-function renderOnboarding(){
+async function renderOnboarding(){
+  // On step 1 first load, check if admin already exists in sheet
+  if(_obStep===1){
+    try{
+      const players=await fetchSheetCSV('Players');
+      _adminAlreadyExists=players.some(p=>p.is_admin==='TRUE'||p.is_admin==='true');
+      // Also load existing players into S.players so nickname uniqueness check works
+      if(players.length>0){
+        S.players=players.filter(p=>p.slot&&p.nickname).map(p=>({
+          slot:parseInt(p.slot),nickname:p.nickname,color:p.color||'#f5c842',isAdmin:p.is_admin==='TRUE'||p.is_admin==='true'
+        }));
+      }
+    }catch(e){
+      // If sheet check fails, hide admin toggle by default (safe fallback)
+      _adminAlreadyExists=true;
+      console.warn('Could not check admin status:',e);
+    }
+  }
   document.getElementById('root').innerHTML=`
     <div class="onboard-wrap">
       <div class="onboard-card" id="obCard">
@@ -1001,13 +1048,17 @@ function renderObStep1(){
     <div class="color-picker">
       ${PLAYER_COLORS.map(c=>`<div class="color-dot ${_obColor===c?'selected':''}" style="background:${c}" onclick="selectColor('${c}')"></div>`).join('')}
     </div>
+    ${_adminAlreadyExists?`
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:10px 14px;margin-bottom:1rem;font-size:13px;color:var(--text3);display:flex;align-items:center;gap:8px">
+      <span>🔒</span><span>An admin has already been assigned for this game</span>
+    </div>`:`
     <div class="admin-toggle" onclick="toggleObAdmin()">
       <div class="toggle-switch ${_obIsAdmin?'on':''}"><div class="toggle-knob"></div></div>
       <div>
         <div style="font-size:14px;font-weight:500">I am the Admin</div>
-        <div style="font-size:12px;color:var(--text3)">Can enter match results</div>
+        <div style="font-size:12px;color:var(--text3)">Can enter match results · Only 1 admin allowed</div>
       </div>
-    </div>
+    </div>`}
     <div class="error-msg" id="obErr1"></div>
     <button class="btn btn-gold" style="width:100%;padding:12px;font-size:15px;border-radius:var(--rsm)" onclick="obNext1()">Continue →</button>`;
 }
@@ -1040,7 +1091,7 @@ function renderObStep3(){
 }
 
 function selectColor(c){_obColor=c;document.querySelectorAll('.color-dot').forEach(d=>{d.classList.toggle('selected',d.style.background===c||d.style.backgroundColor===c);});}
-function toggleObAdmin(){_obIsAdmin=!_obIsAdmin;document.getElementById('root').innerHTML='';renderOnboarding();}
+function toggleObAdmin(){if(_adminAlreadyExists)return;_obIsAdmin=!_obIsAdmin;document.getElementById('root').innerHTML='';renderOnboarding();}
 function onObPinInput(el,idx){if(el.value.length===1&&idx<3)document.getElementById('obPin'+(idx+1)).focus();}
 
 function obNext1(){
