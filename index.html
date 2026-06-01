@@ -1020,8 +1020,9 @@ async function renderOnboarding(){
         }));
       }
     }catch(e){
-      // If sheet check fails, hide admin toggle by default (safe fallback)
-      _adminAlreadyExists=true;
+      // If sheet check fails AND no players registered yet, show admin toggle
+      // so the very first person can still register as admin
+      _adminAlreadyExists=S.players.length>0;
       console.warn('Could not check admin status:',e);
     }
   }
