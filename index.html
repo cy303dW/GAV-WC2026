@@ -269,47 +269,50 @@ const PLAYER_COLORS = ['#f5c842','#3b82f6','#22c55e','#ef4444','#a855f7'];
 // ─── SAMPLE MATCHES (will be enriched by API) ──────────────────────────────
 // Fallback shown while API fixtures are loading
 const FALLBACK_MATCHES = [
-  {id:9001,round:'group',group:'?',home:'Loading...',hf:'⏳',away:'Loading...',af:'⏳',date:'2026-06-11',time:'TBD',status:'upcoming',result:null,apiId:null},
+  {id:9001,round:'group',group:'?',home:'Loading...',hf:'\u23F3',away:'Loading...',af:'\u23F3',date:'2026-06-11',time:'TBD',status:'upcoming',result:null,apiId:null},
 ];
 
 // Country flag emoji map (ISO 3166-1 alpha-2 → flag emoji)
-const FLAG_MAP = {
-  'Argentina':'🇦🇷','Australia':'🇦🇺','Belgium':'🇧🇪','Bolivia':'🇧🇴','Brazil':'🇧🇷',
-  'Cameroon':'🇨🇲','Canada':'🇨🇦','Chile':'🇨🇱','China PR':'🇨🇳','Colombia':'🇨🇴',
-  'Costa Rica':'🇨🇷','Croatia':'🇭🇷','Czechia':'🇨🇿','Czech Republic':'🇨🇿',
-  'Denmark':'🇩🇰','Ecuador':'🇪🇨','Egypt':'🇪🇬','England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','France':'🇫🇷',
-  'Germany':'🇩🇪','Ghana':'🇬🇭','Greece':'🇬🇷','Honduras':'🇭🇳','Hungary':'🇭🇺',
-  'Indonesia':'🇮🇩','Iran':'🇮🇷','Iraq':'🇮🇶','Israel':'🇮🇱','Italy':'🇮🇹',
-  'Jamaica':'🇯🇲','Japan':'🇯🇵','Kenya':'🇰🇪','Mexico':'🇲🇽','Morocco':'🇲🇦',
-  'Netherlands':'🇳🇱','New Zealand':'🇳🇿','Nigeria':'🇳🇬','Norway':'🇳🇴',
-  'Panama':'🇵🇦','Paraguay':'🇵🇾','Peru':'🇵🇪','Poland':'🇵🇱','Portugal':'🇵🇹',
-  'Qatar':'🇶🇦','Romania':'🇷🇴','Saudi Arabia':'🇸🇦','Senegal':'🇸🇳',
-  'Serbia':'🇷🇸','Slovakia':'🇸🇰','Slovenia':'🇸🇮','South Africa':'🇿🇦',
-  'South Korea':'🇰🇷','Korea Republic':'🇰🇷','Spain':'🇪🇸','Sweden':'🇸🇪',
-  'Switzerland':'🇨🇭','Trinidad and Tobago':'🇹🇹','Tunisia':'🇹🇳','Turkey':'🇹🇷',
-  'Ukraine':'🇺🇦','Uruguay':'🇺🇾','USA':'🇺🇸','United States':'🇺🇸',
-  'Venezuela':'🇻🇪','Wales':'🏴󠁧󠁢󠁷󠁬󠁳󠁿','Uzbekistan':'🇺🇿','Bosnia':'🇧🇦',
-  'Bosnia and Herzegovina':'🇧🇦','Democratic Republic of Congo':'🇨🇩','DR Congo':'🇨🇩',
-  'Cuba':'🇨🇺','El Salvador':'🇸🇻','Guatemala':'🇬🇹','Haiti':'🇭🇹',
-  'New Caledonia':'🇳🇨','Bahrain':'🇧🇭','Kuwait':'🇰🇼','Oman':'🇴🇲',
-  'Palestine':'🇵🇸','Syria':'🇸🇾','Thailand':'🇹🇭','Vietnam':'🇻🇳',
-  'Côte d'Ivoire':'🇨🇮','Ivory Coast':'🇨🇮','Algeria':'🇩🇿','Angola':'🇦🇴',
-  'Cape Verde':'🇨🇻','Comoros':'🇰🇲','Guinea':'🇬🇳','Mali':'🇲🇱',
-  'Tanzania':'🇹🇿','Uganda':'🇺🇬','Zambia':'🇿🇲','Zimbabwe':'🇿🇼',
-  'Togo':'🇹🇬','Namibia':'🇳🇦',
+// Country flag emoji map using ISO 3166-1 alpha-2 codes
+// Flags generated programmatically to avoid raw Unicode in source
+const ISO_MAP = {
+  'Argentina':'AR','Australia':'AU','Belgium':'BE','Bolivia':'BO','Brazil':'BR',
+  'Cameroon':'CM','Canada':'CA','Chile':'CL','China PR':'CN','Colombia':'CO',
+  'Costa Rica':'CR','Croatia':'HR','Czechia':'CZ','Czech Republic':'CZ',
+  'Denmark':'DK','Ecuador':'EC','Egypt':'EG','France':'FR',
+  'Germany':'DE','Ghana':'GH','Greece':'GR','Honduras':'HN','Hungary':'HU',
+  'Indonesia':'ID','Iran':'IR','Iraq':'IQ','Israel':'IL','Italy':'IT',
+  'Jamaica':'JM','Japan':'JP','Kenya':'KE','Mexico':'MX','Morocco':'MA',
+  'Netherlands':'NL','New Zealand':'NZ','Nigeria':'NG','Norway':'NO',
+  'Panama':'PA','Paraguay':'PY','Peru':'PE','Poland':'PL','Portugal':'PT',
+  'Qatar':'QA','Romania':'RO','Saudi Arabia':'SA','Senegal':'SN',
+  'Serbia':'RS','Slovakia':'SK','Slovenia':'SI','South Africa':'ZA',
+  'South Korea':'KR','Korea Republic':'KR','Spain':'ES','Sweden':'SE',
+  'Switzerland':'CH','Trinidad and Tobago':'TT','Tunisia':'TN','Turkey':'TR',
+  'Ukraine':'UA','Uruguay':'UY','USA':'US','United States':'US',
+  'Venezuela':'VE','Uzbekistan':'UZ','Bosnia':'BA',
+  'Bosnia and Herzegovina':'BA','Democratic Republic of Congo':'CD','DR Congo':'CD',
+  'Cuba':'CU','El Salvador':'SV','Guatemala':'GT','Haiti':'HT',
+  'New Caledonia':'NC','Bahrain':'BH','Kuwait':'KW','Oman':'OM',
+  'Palestine':'PS','Syria':'SY','Thailand':'TH','Vietnam':'VN',
+  'Ivory Coast':'CI','Algeria':'DZ','Angola':'AO',
+  'Cape Verde':'CV','Comoros':'KM','Guinea':'GN','Mali':'ML',
+  'Tanzania':'TZ','Uganda':'UG','Zambia':'ZM','Zimbabwe':'ZW',
+  'Togo':'TG','Namibia':'NA','England':'GB','Wales':'GB','Scotland':'GB',
 };
-function flagFor(name){ return FLAG_MAP[name]||'🏳️'; }
-
-// Round detection from API fixture round string
-function detectRound(roundStr){
-  if(!roundStr) return 'group';
-  const r=roundStr.toLowerCase();
-  if(r.includes('final') && !r.includes('semi') && !r.includes('quarter') && !r.includes('round of')) return 'final';
-  if(r.includes('semi')) return 'sf';
-  if(r.includes('quarter')) return 'qf';
-  if(r.includes('round of 16')) return 'r16';
-  if(r.includes('round of 32')) return 'r32';
-  return 'group';
+function isoToFlag(iso){
+  if(!iso||iso.length!==2) return '\u{1F3F3}\uFE0F';
+  const offset=0x1F1E6-65;
+  return String.fromCodePoint(iso.charCodeAt(0)+offset)+String.fromCodePoint(iso.charCodeAt(1)+offset);
+}
+function flagFor(name){
+  // Handle special cases
+  if(!name||name==='TBD') return '\u{1F3F3}\uFE0F';
+  const iso=ISO_MAP[name];
+  if(iso) return isoToFlag(iso);
+  // Try to match partial name
+  const key=Object.keys(ISO_MAP).find(k=>name.toLowerCase().includes(k.toLowerCase())||k.toLowerCase().includes(name.toLowerCase()));
+  return key?isoToFlag(ISO_MAP[key]):'\u{1F3F3}\uFE0F';
 }
 
 // Map API fixture status to our status
