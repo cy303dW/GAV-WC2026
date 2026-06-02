@@ -661,9 +661,9 @@ async function loadFixturesFromSheet(){
       round:r.round||'group',
       group:r.group||null,
       home:r.home||'TBD',
-      hf:r.home_flag||'🏳️',
+      hf:r.home_flag&&r.home_flag!==''?r.home_flag:flagFor(r.home||''),
       away:r.away||'TBD',
-      af:r.away_flag||'🏳️',
+      af:r.away_flag&&r.away_flag!==''?r.away_flag:flagFor(r.away||''),
       date:r.date||'',
       time:r.time_sgt||'TBD',
       status:r.status||'upcoming',
@@ -684,17 +684,29 @@ let cdInterval=null;
 function getNextMatch(){ return S.matches.find(m=>m.status==='upcoming'||m.status==='live'); }
 function countdownTo(dateStr,timeStr){
   if(!dateStr||timeStr==='TBD') return null;
-  const dt=new Date(`${dateStr}T${timeStr}:00+08:00`);
+  const t=padTime(timeStr);
+  if(!t) return null;
+  const dt=new Date(`${dateStr}T${t}:00+08:00`);
   const diff=dt-new Date();
   if(diff<=0) return null;
   return{d:Math.floor(diff/86400000),h:Math.floor(diff%86400000/3600000),m:Math.floor(diff%3600000/60000),s:Math.floor(diff%60000/1000),diff};
 }
 function pad(n){return String(n).padStart(2,'0');}
 
+function padTime(t){
+  // Ensure time is HH:MM (Google Sheets strips leading zeros)
+  if(!t||t==='TBD') return null;
+  const parts=t.split(':');
+  return parts[0].padStart(2,'0')+':'+parts[1].padStart(2,'0');
+}
+
 function deadlineFor(match){
   // Returns the prediction deadline: kickoff minus 2 hours (in ms)
   if(!match.date||match.time==='TBD') return null;
-  const kickoff=new Date(`${match.date}T${match.time}:00+08:00`);
+  const t=padTime(match.time);
+  if(!t) return null;
+  const kickoff=new Date(`${match.date}T${t}:00+08:00`);
+  if(isNaN(kickoff.getTime())) return null;
   return new Date(kickoff.getTime()-2*60*60*1000);
 }
 
